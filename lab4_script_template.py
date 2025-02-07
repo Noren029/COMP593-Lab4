@@ -1,9 +1,14 @@
 
+
+
 def main():
     log_file = get_log_file_path_from_cmd_line()
+    print(f"Analyzing file:\n {log}")
 
 # TODO: Step 3
 def get_log_file_path_from_cmd_line():
+
+    if len(sys.argv)
     return
 
 # TODO: Steps 4-7
@@ -20,10 +25,16 @@ def filter_log_by_regex(log_file, regex, ignore_case=True, print_summary=False, 
     Returns:
         (list, list): List of records that match regex, List of tuples of captured data
     """
+    # List of linesto be returned
+    filtered_records = [] # start empty list
+
+
     return
 
 # TODO: Step 8
 def tally_port_traffic(log_file):
+    by_port = {} #initialy
+
     return
 
 # TODO: Step 9
