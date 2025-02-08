@@ -13,14 +13,15 @@ Usage:
 
 '''
 
-### Imports
-#import re  # Regular expressions
+# Import necessary modules
 import sys  # Need for sys.argv command line parameters
 import os  # Need for path handling
-from log_matching import filter_log_by_regex  # My own module with the convenient matching function
+import re  # Regular expressions
 import pandas as pd
+import csv
+from log_matching import filter_log_by_regex  # Your custom function for matching logs
 
-
+# Main function that orchestrates the script's operations
 def main():
     log_file = get_log_file_path_from_cmd_line()  # Get the file name (Step 3)
     print(f"Analyzing file:\n  {log_file}")  # Test step 3 (we can comment out later)
@@ -29,68 +30,99 @@ def main():
     regex = r'SSHD'
     filter_log_by_regex(log_file, regex, ignore_case=True, print_summary=True, print_records=True)
 
-    return
-    # end of main function here
+    # Uncomment the below line to test additional functionalities
+    # tally_port_traffic(log_file)  # Step 8
+    # generate_port_traffic_report(log_file, 22)  # Step 9, Example with port 22 (SSH)
+    # generate_invalid_user_report(log_file)  # Step 11
+    # generate_source_ip_log(log_file, '192.168.1.1')  # Step 12, Example with a source IP address
 
-
-# TODO: Step 3
+# Step 3: Retrieve log file path from the command line
 def get_log_file_path_from_cmd_line():
     '''Return the command line parameter giving the file name or path,
-    exit with error message if no parameter or if parameter is not a file.
-    '''
+    exit with error message if no parameter or if parameter is not a file.'''
     if len(sys.argv) > 1:  # there is at least one argument after the program name itself
-        # Get the path
         filename = sys.argv[1]
         if os.path.isfile(filename):  # Check if it's a file
-            return os.path.abspath(filename)  # Expand to full path in file system
+            return os.path.abspath(filename)  # Return the absolute path
         else:
             print("Name specified on the command line is not a file. Exiting...")
-            exit(0)  # Exit status code is only used in Linux/Unix systems, just leave at zero
+            exit(0)
     else:
         print("No file name specified on the command line. Exiting...")
-        exit(0)  # Exit status code is only used in Linux/Unix systems, just leave at zero
-    # No return statement here, all paths through the if-else statements
-    # end in a return or an exit. The return statement would be "dead code".
+        exit(0)
 
-# TODO: Steps 4-7 -- this has been moved to the separate module
-
-# TODO: Step 8
+# Step 8: Tally the traffic for each port
 def tally_port_traffic(log_file):
-    # Dictionary where key is the port number and the value is the number of times
-    # the port was seen in the file.
-    by_port = {}  # initially empty
+    by_port = {}  # Dictionary to store port number and its count
 
-    # Treat this as pseudo-code
-    # do the matching routine, same as above
-        if port_number in by_port:  # Ask if the port number is already in dictionary
-            by_port[port_number] += 1  # Already there, add 1 to the count
-        else:
-            by_port[port_number] = 1  # first time seen in log file.
-    return
+    try:
+        with open(log_file, 'r') as file:
+            records = file.readlines()
 
-    return
+        for record in records:
+            match = re.search(r'DPT=(\d+)', record)  # Search for the destination port
+            if match:
+                port_number = match.group(1)
+                if port_number in by_port:
+                    by_port[port_number] += 1
+                else:
+                    by_port[port_number] = 1
 
-# TODO: Step 9
+        print("Port Traffic Tally:")
+        for port, count in by_port.items():
+            print(f"Port {port}: {count} occurrences")
+
+    except FileNotFoundError:
+        print(f"Error: File '{log_file}' not found.")
+        exit(1)
+
+# Step 9: Generate a port traffic report based on the port number
 def generate_port_traffic_report(log_file, port_number):
+    regex = r'^(.{6}) (.*) myth.*SRC=(.*?) DST=(.*?) DPT=' + f'({port_number})'
 
-    regex = r'^(.{6}) (.*) myth.*SRC=(.*?) DST=(.*?) '+ f'DPT=({port_number})'
-    traffic_records = filter_log_by_regex(log_file,regex)[1]
+    traffic_records = filter_log_by_regex(log_file, regex)[1]
 
-    traffic_df = pd.DataFrame(traffic_records)
-    traffic_header = ('Date', 'Time', 'Source IP Address', 'Destination IP Adress', 'Source Port', 'Destination Port')
+    # Create a DataFrame for the traffic records
+    traffic_df = pd.DataFrame(traffic_records, columns=['Date', 'Time', 'Source IP Address', 'Destination IP Address', 'Source Port', 'Destination Port'])
 
-    Traffic_df.to_csv(f'destination_port_{port_number}_report.csv',header=traffic_header,index=False)
+    # Save the DataFrame to a CSV file
+    traffic_df.to_csv(f'destination_port_{port_number}_report.csv', header=True, index=False)
+    print(f"Port traffic report saved as destination_port_{port_number}_report.csv")
 
-
-    return
-
-# TODO: Step 11
+# Step 11: Generate an invalid user report
 def generate_invalid_user_report(log_file):
-    return
-pip
-# TODO: Step 12
-def generate_source_ip_log(log_file, ip_address):
-    return
+    '''Generate a report for invalid user logins.'''
+    regex = r"Invalid user (\S+)"
+    matching_records = filter_log_by_regex(log_file, regex)[1]
 
+    # Save the report to a CSV file
+    with open('invalid_user_report.csv', 'w') as f:
+        writer = csv.writer(f)
+        writer.writerow(['Invalid Username', 'Log Message'])
+
+        for record in matching_records:
+            match = re.search(r"Invalid user (\S+)", record)
+            if match:
+                writer.writerow([match.group(1), record.strip()])
+
+    print("Invalid User Report saved as invalid_user_report.csv")
+
+# Step 12: Generate a log for a specific source IP address
+def generate_source_ip_log(log_file, ip_address):
+    '''Generate a log for a specific source IP address.'''
+    regex = f"src={ip_address}"
+    matching_records = filter_log_by_regex(log_file, regex)[1]
+
+    # Save the source IP log to a CSV file
+    with open(f'source_ip_log_{ip_address}.csv', 'w') as f:
+        writer = csv.writer(f)
+        writer.writerow(['Source IP', 'Log Message'])
+
+        for record in matching_records:
+            writer.writerow([ip_address, record.strip()])
+
+    print(f"Source IP log saved as source_ip_log_{ip_address}.csv")
+
+# Entry point for script execution
 if __name__ == '__main__':
-     main()
+    main()
