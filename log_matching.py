@@ -12,6 +12,7 @@ Usage: Import this module into your main program
 '''
 
 import re
+import csv
 
 def filter_log_by_regex(log_file, regex, ignore_case=True, print_summary=False, print_records=False):
     """Gets a list of records in a log file that match a specified regex.
@@ -61,6 +62,39 @@ def filter_log_by_regex(log_file, regex, ignore_case=True, print_summary=False, 
         print(f'The log file contains {len(filtered_records)} records, {sensitive}, matching regex:\n  r"{regex}"')
 
     return (filtered_records, filtered_groups)
+
+log_entry = "Jan 29 13:05:11 myth kernel: SFW2-INext-ACC-TCP IN=ppp0 OUT= MAC= SRC=220.195.35.40 DST=216.58.112.55 LEN=60 TOS=0x00 PREC=0x00 TTL=40 ID=9325 DF PROTO=TCP SPT=58989 DPT=22 WINDOW=5840 RES=0x00 SYN URGP=0 OPT (020405780402080A0265BA120000000001030300)"
+
+regex = r'^[A-Za-z]{3}\s{1,2}\d{1,2}\s{1}\d{2}:\d{2}:\d{2}\s\w+\s(kernel):\sSFW2-INext-ACC-TCP\sIN=(\S+)\sOUT=(\S+)\sMAC=(\S+)\sSRC=(\S+)\sDST=(\S+)\sLEN=(\d+)\sTOS=\S+\sPREC=\S+\sTTL=(\d+)\sID=(\d+)\sDF\sPROTO=(\S+)\sSPT=(\d+)\sDPT=(\d+)\sWINDOW=(\d+)\sRES=\S+\sSYN\sURGP=(\d+)\sOPT=\S+$'
+
+match = re.match(regex, log_entry)
+
+if match:
+    print("Match found!")
+    # Capture the various fields from the log entry
+    interface_in = match.group(1)
+    interface_out = match.group(2)
+    mac_address = match.group(3)
+    src_ip = match.group(4)
+    dst_ip = match.group(5)
+    packet_length = match.group(6)
+    ttl = match.group(7)
+    id_field = match.group(8)
+    protocol = match.group(9)
+    src_port = match.group(10)
+    dst_port = match.group(11)
+    window_size = match.group(12)
+    urgp = match.group(13)
+    
+    print(f"Input Interface: {interface_in}")
+    print(f"Output Interface: {interface_out}")
+    print(f"Source IP: {src_ip}")
+    print(f"Destination IP: {dst_ip}")
+    print(f"Source Port: {src_port}")
+    print(f"Destination Port: {dst_port}")
+else:
+    print("No match.")
+
 
 if __name__ == "__main__":
     print("Please import this file as a module to access its content.")
