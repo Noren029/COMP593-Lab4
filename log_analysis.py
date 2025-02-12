@@ -13,12 +13,10 @@ Usage:
 
 '''
 
-import os
-import sys
+
 from log_matching import get_log_file_path_from_cmd_line,filter_log_by_regex
 import pandas as pd
 import re
-import csv
 import logging
 
 def main():
